@@ -478,9 +478,11 @@ difference() {
       difference() {
         circle(d=40);
         circle(d=25);
-        for (i=[0:1]) {
-          rotate([0, 0, i*90]) {
-            square(size=[40, 2], center=true);
+        rotate([0, 0, 45]) {
+          for (i=[0:1]) {
+            rotate([0, 0, i*90]) {
+              square(size=[40, 2], center=true);
+            }
           }
         }
       }
