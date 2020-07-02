@@ -13,9 +13,11 @@ bottomMargin=2;
 
 /*[Thickness]*/
 // Thickness of the base
-baseThickness=3;
+baseThickness=1.9;
 // Thickness of the side walls
-wallThickness=1;
+wallThickness=1.5;
+// Lid Thickness
+lidThickness=1.5;
 
 /*[Resolution]*/
 $fs=.5;
@@ -23,6 +25,10 @@ $fa=5;
 
 /*[Features]*/
 sdCardExtendToCaseBottom=true;
+lidHeight=10;
+
+/*[What parts to render]*/
+renderBottom=false;
 
 /*[Vents]*/
 // the size of the margin on the the outside of the board outline where vents are not allowed
@@ -38,6 +44,15 @@ boardThickness=1;
 boardCornerRadius=3;
 mountingHoleXoffset=58;
 mountingHoleYoffset=49;
+
+fanSide=40;
+fanSideRoundingRadius=2;
+fanThickness=11;
+fanScrewHoleRadius=3/2;
+// distances from outside
+fanDistanceFromEdge=.5;
+fanHoleDistanceFromEdge=2;
+
 MIN=-1;
 CENTER=0;
 MAX=1;
@@ -376,14 +391,6 @@ module basicCaseShell(height=0) {
   }
 }
 
-fanSide=40;
-fanSideRoundingRadius=2;
-fanThickness=11;
-fanScrewHoleRadius=3/2;
-// distances from outside
-fanDistanceFromEdge=.5;
-fanHoleDistanceFromEdge=2;
-
 module roundedRectangle(sides=[10,10], roundingRadius=1) {
   xoffset=sides[0]-roundingRadius*2;
   yoffset=sides[1]-roundingRadius*2;
@@ -420,11 +427,6 @@ module fan(cubeMargin=0) {
   }
 }
 
-/* board(); */
-renderBottom=false;
-lidThickness=wallThickness;
-lidHeight=10;
-
 if(renderBottom){
   difference() {
     union() {
@@ -451,14 +453,20 @@ module basicCaseLid() {
 difference() {
   union() {
     basicCaseLid();
-    gripWidth=10;
-    gripThickness=2;
+    gripThickness=3;
     for (i=[0:3]) {
       rotate([0, 0, i*90]) {
         translate([0, .5+fanSide/2, -lidHeight/2]) {
           rotate([0, -90, 0]) {
             linear_extrude(height=gripThickness, center=true, convexity=10, twist=0) {
-              polygon(points=[[0,0],[fanThickness,0],[fanThickness+.5, -.3],[fanThickness+1, 0],[fanThickness+1, 2],[0,6]]);
+              polygon(points=[
+                [0,0],
+                [fanThickness,0],
+                [fanThickness+.75, -.4],
+                [fanThickness+1, 0],
+                [fanThickness+1, 2],
+                [0,6]
+              ]);
             }
           }
         }
