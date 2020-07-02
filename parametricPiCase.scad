@@ -450,42 +450,50 @@ module basicCaseLid() {
   }
 }
 
-difference() {
-  union() {
-    basicCaseLid();
-    gripThickness=3;
-    for (i=[0:3]) {
-      rotate([0, 0, i*90]) {
-        translate([0, .5+fanSide/2, -lidHeight/2]) {
-          rotate([0, -90, 0]) {
-            linear_extrude(height=gripThickness, center=true, convexity=10, twist=0) {
-              polygon(points=[
-                [0,0],
-                [fanThickness,0],
-                [fanThickness+.75, -.4],
-                [fanThickness+1, 0],
-                [fanThickness+1, 2],
-                [0,6]
-              ]);
+
+intersection() {
+  cube(size=[getBoardHeight(), getBoardHeight(), 50], center=true);
+  difference() {
+    union() {
+      basicCaseLid();
+      gripThickness=8;
+      for (i=[0:3]) {
+        rotate([0, 0, i*90]) {
+          translate([0, .3+fanSide/2, -lidHeight/2]) {
+            rotate([0, -90, 0]) {
+              linear_extrude(height=gripThickness, center=true, convexity=10, twist=0) {
+                polygon(points=[
+                  [0,0],
+                  [fanThickness,0],
+                  [fanThickness+.75, -.6],
+                  [fanThickness+1, 0],
+                  [fanThickness+1, 2],
+                  [0,6]
+                  ]);
+                }
+              }
             }
           }
         }
       }
-    }
-  }
-  translate([0, 0, -lidHeight/2]) {
-    #linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
-      difference() {
-        circle(d=40);
-        circle(d=25);
-        rotate([0, 0, 45]) {
-          for (i=[0:1]) {
-            rotate([0, 0, i*90]) {
-              square(size=[40, 2], center=true);
+      translate([0, 0, -lidHeight/2]) {
+        linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
+          difference() {
+            circle(d=40);
+            circle(d=25);
+            rotate([0, 0, 45]) {
+              for (i=[0:1]) {
+                rotate([0, 0, i*90]) {
+                  square(size=[40, 2], center=true);
+                }
+              }
             }
           }
         }
+        fanGrillDistance=.5;
+        translate([0, 0, lidThickness-fanGrillDistance]) {
+          #cylinder(d=fanSide, h=fanGrillDistance, center=false);
+        }
       }
     }
-  }
 }
