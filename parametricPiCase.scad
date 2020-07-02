@@ -275,7 +275,7 @@ module alignToSdCard() {
 }
 
 module sdCardHole(extendToCaseBottom=sdCardExtendToCaseBottom) {
-  extraHeight=baseThickness;
+  extraHeight=baseThickness+bottomMargin;
   translate([0, 0, extendToCaseBottom?(-extraHeight/2):0])
     minkowski() {
       alignToSdCard()
