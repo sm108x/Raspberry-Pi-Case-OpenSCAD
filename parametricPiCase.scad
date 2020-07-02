@@ -5,7 +5,7 @@ boardVariant=""; // [Standard, Plus]
 
 /* [Margins] */
 // the margin between the board and the case
-sideMargin=1;
+sideMargin=.9;
 // margin around connectors
 connectorHoleMargin=.5;
 // space between the bottom of the board and the floor of the case
