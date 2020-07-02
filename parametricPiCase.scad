@@ -312,8 +312,8 @@ module bottomVentsOutline() {
 
 module bottomVents() {
   if (bottomVentsFrequency>0) {
-    alignToBoard(CENTER, CENTER, MIN) translate([0, 0, -bottomMargin]) {
-      linear_extrude(height=baseThickness, center=true, convexity=10, twist=0) {
+    alignToBoard(CENTER, CENTER, CENTER) translate([0, 0, -baseThickness-bottomMargin]) {
+      linear_extrude(height=baseThickness, center=false, convexity=10, twist=0) {
         bottomVentsOutline();
       }
     }
