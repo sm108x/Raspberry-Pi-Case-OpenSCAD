@@ -155,7 +155,7 @@ module caseHole(rotation=0) {
   }
 }
 
-module microHdmiHoleOutline(margin=1) {
+module microHdmiHoleOutline(margin=connectorHoleMargin) {
   offset(r=margin)
   square(size=[6, 2], center=true);
 }
@@ -376,13 +376,13 @@ module basicCaseShell(height=0) {
   }
 }
 
-side=40;
-sideRoundingRadius=2;
-thickness=11;
-screwHoleRadius=3/2;
+fanSide=40;
+fanSideRoundingRadius=2;
+fanThickness=11;
+fanScrewHoleRadius=3/2;
 // distances from outside
 fanDistanceFromEdge=.5;
-holeDistanceFromEdge=2;
+fanHoleDistanceFromEdge=2;
 
 module roundedRectangle(sides=[10,10], roundingRadius=1) {
   xoffset=sides[0]-roundingRadius*2;
@@ -404,21 +404,78 @@ module roundedSquare(side, roundingRadius=1) {
   roundedRectangle([side, side], roundingRadius);
 }
 
+module basicFanMass(args) {
+  linear_extrude(height=fanThickness, center=true, convexity=10, twist=0) {
+    roundedSquare(fanSide, fanSideRoundingRadius);
+  }
+}
+
 module fan(cubeMargin=0) {
   alignToBoard(MIN, MAX, MAX)
-  translate([side/2, -side/2, 12]) {
+  translate([fanSide/2, -fanSide/2, 12]) {
     minkowski() {
-      linear_extrude(height=11, center=true, convexity=10, twist=0) {
-        roundedSquare(side, sideRoundingRadius);
-      }
+      basicFanMass();
       cube(size=[cubeMargin, cubeMargin, cubeMargin], center=true);
     }
   }
 }
 
 /* board(); */
+renderBottom=false;
+lidThickness=wallThickness;
+lidHeight=10;
+
+if(renderBottom){
+  difference() {
+    union() {
+      basicCaseShell(height=baseThickness+boardThickness+bottomMargin+getBoardMaxZ()-4);
+    }
+  }
+}
+
+module basicCaseLid() {
+  alignToBoard(CENTER, CENTER, CENTER){
+    difference() {
+      linear_extrude(height=lidHeight, center=true, convexity=10, twist=0) {
+        offset(r=wallThickness+sideMargin) boardOutline(holes=false);
+      }
+      translate([0, 0, lidThickness]) {
+        linear_extrude(height=lidHeight, center=true, convexity=10, twist=0) {
+          offset(r=sideMargin) boardOutline(holes=false);
+        }
+      }
+    }
+  }
+}
+
 difference() {
   union() {
-    basicCaseShell(height=baseThickness+boardThickness+bottomMargin+getBoardMaxZ()-4);
+    basicCaseLid();
+    gripWidth=10;
+    gripThickness=2;
+    for (i=[0:3]) {
+      rotate([0, 0, i*90]) {
+        translate([0, .5+fanSide/2, -lidHeight/2]) {
+          rotate([0, -90, 0]) {
+            linear_extrude(height=gripThickness, center=true, convexity=10, twist=0) {
+              polygon(points=[[0,0],[fanThickness,0],[fanThickness+.5, -.3],[fanThickness+1, 0],[fanThickness+1, 2],[0,6]]);
+            }
+          }
+        }
+      }
+    }
+  }
+  translate([0, 0, -lidHeight/2]) {
+    #linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
+      difference() {
+        circle(d=40);
+        circle(d=25);
+        for (i=[0:1]) {
+          rotate([0, 0, i*90]) {
+            square(size=[40, 2], center=true);
+          }
+        }
+      }
+    }
   }
 }
