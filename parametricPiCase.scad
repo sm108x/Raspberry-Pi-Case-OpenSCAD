@@ -129,10 +129,16 @@ module powerConnectorHole() {
 }
 
 module hdmiSideHole() {
-  translate([0, -sideMargin, 0]) {
-    rotate([90, 0, 0]) {
-      linear_extrude(height=wallThickness*2, center=true, convexity=10, twist=0) {
-        children();
+  caseHole(rotation=0) children();
+}
+
+module caseHole(rotation=0) {
+  rotate([0, 0, rotation]) {
+    translate([0, -sideMargin, 0]) {
+      rotate([90, 0, 0]) {
+        linear_extrude(height=wallThickness*2, center=true, convexity=10, twist=0) {
+          children();
+        }
       }
     }
   }
@@ -249,12 +255,28 @@ module ethHoles() {
   }
 }
 
+module sdCardHoleOutline(margin=.5) {
+  offset(r=margin)
+    square(size=[11, 1], center=true);
+}
+
+module alignToSdCard() {
+  alignToBoard(MIN, MIN, MIN) translate([0, 3.5+24.5, -.5]) children();
+}
+
+module sdCardHole() {
+  alignToSdCard()
+    caseHole(rotation=-90)
+      sdCardHoleOutline();
+}
+
 module caseHoles() {
   powerConnectorHole();
   hdmiHoles();
   audioJackHole();
   usbHoles();
   ethHoles();
+  sdCardHole();
 }
 
 module basicCaseShell(height=0, wallThickness=wallThickness, sideMargin=sideMargin, baseThickness=baseThickness, bottomMargin=bottomMargin) {
