@@ -160,7 +160,7 @@ module hdmi1hole() {
 }
 
 module audioJackHole() {
-  alignToAudioJack() hdmiSideHole() circle(d=5);
+  alignToAudioJack() hdmiSideHole() circle(d=6+connectorHoleMargin*2); // 6 measured
 }
 
 module hdmiConnectorOutline(margin=1) {
