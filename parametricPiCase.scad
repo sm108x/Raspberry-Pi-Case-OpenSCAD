@@ -169,9 +169,8 @@ module audioJackHole() {
   alignToAudioJack() hdmiSideHole() circle(d=6+connectorHoleMargin*2); // 6 measured
 }
 
-module hdmiConnectorOutline(margin=1) {
-  offset(r=margin)
-  square(size=[14, 4.5], center=true);
+module hdmiConnectorOutline(margin=connectorHoleMargin) {
+  offset(r=margin) square(size=[14, 4.5], center=true);
 }
 
 module hdmiHoles() {
