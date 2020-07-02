@@ -5,7 +5,7 @@ boardVariant=""; // [Standard, Plus]
 
 /* [Margins] */
 // the margin between the board and the case
-sideMargin=1;
+sideMargin=.9;
 // margin around connectors
 connectorHoleMargin=.5;
 // space between the bottom of the board and the floor of the case
@@ -20,6 +20,17 @@ wallThickness=1;
 /*[Resolution]*/
 $fs=.5;
 $fa=5;
+
+/*[Features]*/
+sdCardExtendToCaseBottom=true;
+
+/*[Vents]*/
+// the size of the margin on the the outside of the board outline where vents are not allowed
+bottomVentInsets=4;
+// the ratio of open to filled surface (decimal between 0 and 1, higher = more open)
+bottomVentsOpenRatio=.8;
+// over height
+bottomVentsFrequency=4;
 
 /* [Hidden] */
 // The below are not configurable
@@ -254,7 +265,7 @@ module ethHoles() {
   }
 }
 
-module sdCardHoleOutline(margin=.5) {
+module sdCardHoleOutline(margin=connectorHoleMargin) {
   offset(r=margin)
     square(size=[11, 1], center=true);
 }
@@ -263,22 +274,75 @@ module alignToSdCard() {
   alignToBoard(MIN, MIN, MIN) translate([0, 3.5+24.5, -.5]) children();
 }
 
-module sdCardHole() {
-  alignToSdCard()
-    caseHole(rotation=-90)
-      sdCardHoleOutline();
+module sdCardHole(extendToCaseBottom=sdCardExtendToCaseBottom) {
+  extraHeight=baseThickness+bottomMargin;
+  translate([0, 0, extendToCaseBottom?(-extraHeight/2):0])
+    minkowski() {
+      alignToSdCard()
+        caseHole(rotation=-90)
+          sdCardHoleOutline();
+      if (extendToCaseBottom) {
+        cube(size=[.01,.01,extraHeight], center=true);
+      }
+    }
 }
 
-module caseHoles() {
+module bottomVentsPattern() {
+  height=getBoardHeight();
+  length=getBoardLength();
+  distance=height/bottomVentsFrequency;
+  xCount=ceil(bottomVentsFrequency/height*length);
+  squareSide=distance*sqrt(bottomVentsOpenRatio);
+  for (i=[0:xCount-1]) {
+    for (j=[0:bottomVentsFrequency-1]) {
+      translate([-length/2+i*distance+(distance-squareSide)/2, -height/2+j*distance+(distance-squareSide)/2, 0]) {
+        square(squareSide);
+      }
+    }
+  }
+}
+
+module bottomVentsOutline() {
+  intersection() {
+    offset(r=-bottomVentInsets)
+      boardOutline();
+    bottomVentsPattern();
+  }
+}
+
+module bottomVents() {
+  if (bottomVentsFrequency>0) {
+    alignToBoard(CENTER, CENTER, MIN) translate([0, 0, -bottomMargin]) {
+      linear_extrude(height=baseThickness, center=true, convexity=10, twist=0) {
+        bottomVentsOutline();
+      }
+    }
+  }
+}
+
+module topVents() {
+}
+
+module sideVents(height) {
+}
+
+module ventHoles(height) {
+  bottomVents();
+  topVents();
+  sideVents(height);
+}
+
+module caseHoles(height) {
   powerConnectorHole();
   hdmiHoles();
   audioJackHole();
   usbHoles();
   ethHoles();
   sdCardHole();
+  ventHoles(height);
 }
 
-module basicCaseShell(height=0, wallThickness=wallThickness, sideMargin=sideMargin, baseThickness=baseThickness, bottomMargin=bottomMargin) {
+module basicCaseShell(height=0) {
   caseShellHeight=(height>0)?height:getBoardMaxZ()+baseThickness+bottomMargin;
   translate([0, 0, -baseThickness-bottomMargin]) {
     translate([0, 0, baseThickness]) {
@@ -305,7 +369,7 @@ module basicCaseShell(height=0, wallThickness=wallThickness, sideMargin=sideMarg
         }
         //holes
         translate([0, 0, baseThickness+bottomMargin]) {
-          caseHoles();
+          caseHoles(height=height);
         }
       }
     }
