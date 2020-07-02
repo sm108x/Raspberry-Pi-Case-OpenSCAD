@@ -21,6 +21,9 @@ wallThickness=1;
 $fs=.5;
 $fa=5;
 
+/*[Features]*/
+sdCardExtendToCaseBottom=true;
+
 /* [Hidden] */
 // The below are not configurable
 boardThickness=1;
@@ -254,7 +257,7 @@ module ethHoles() {
   }
 }
 
-module sdCardHoleOutline(margin=.5) {
+module sdCardHoleOutline(margin=connectorHoleMargin) {
   offset(r=margin)
     square(size=[11, 1], center=true);
 }
@@ -263,10 +266,17 @@ module alignToSdCard() {
   alignToBoard(MIN, MIN, MIN) translate([0, 3.5+24.5, -.5]) children();
 }
 
-module sdCardHole() {
-  alignToSdCard()
-    caseHole(rotation=-90)
-      sdCardHoleOutline();
+module sdCardHole(extendToCaseBottom=sdCardExtendToCaseBottom) {
+  extraHeight=baseThickness;
+  translate([0, 0, extendToCaseBottom?(-extraHeight/2):0])
+    minkowski() {
+      alignToSdCard()
+        caseHole(rotation=-90)
+          sdCardHoleOutline();
+      if (extendToCaseBottom) {
+        cube(size=[.01,.01,extraHeight], center=true);
+      }
+    }
 }
 
 module caseHoles() {
