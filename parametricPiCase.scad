@@ -459,7 +459,7 @@ intersection() {
       gripThickness=8;
       for (i=[0:3]) {
         rotate([0, 0, i*90]) {
-          translate([0, .3+fanSide/2, -lidHeight/2]) {
+          translate([0, .3+fanSide/2, -lidHeight/2+lidThickness]) {
             rotate([0, -90, 0]) {
               linear_extrude(height=gripThickness, center=true, convexity=10, twist=0) {
                 polygon(points=[
