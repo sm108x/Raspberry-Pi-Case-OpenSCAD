@@ -40,8 +40,8 @@ bottomVentInsets=4;
 // the ratio of open to filled surface (decimal between 0 and 1, higher = more open)
 bottomVentsOpenRatio=.8;
 // over height
-bottomVentsFrequency=4;
 
+bottomVentsFrequency=0;
 /*[Fan spec]*/
 fanSide=40;
 fanHubDiamter=25;
