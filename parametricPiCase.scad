@@ -361,8 +361,8 @@ module caseHoles(height) {
   ventHoles(height);
 }
 
-module basicCaseShell(height=0) {
-  caseShellHeight=(height>0)?height:getBoardMaxZ()+baseThickness+bottomMargin;
+caseShellHeight=getBoardMaxZ()+baseThickness+bottomMargin;
+module basicCaseShell() {
   translate([0, 0, -baseThickness-bottomMargin]) {
     translate([0, 0, baseThickness]) {
       alignToMountingHoles(z=CENTER){
