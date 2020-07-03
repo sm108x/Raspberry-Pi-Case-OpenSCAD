@@ -10,6 +10,8 @@ sideMargin=.9;
 connectorHoleMargin=.5;
 // space between the bottom of the board and the floor of the case
 bottomMargin=2;
+// margin around the port blocks
+portBlockMargin=0.5;
 
 /*[Thickness]*/
 // Thickness of the base
@@ -26,6 +28,8 @@ $fa=5;
 /*[Features]*/
 sdCardExtendToCaseBottom=true;
 lidHeight=10;
+coverCase=false;
+heightDelta=0;
 
 /*[What parts to render]*/
 renderBottom=false;
@@ -38,13 +42,7 @@ bottomVentsOpenRatio=.8;
 // over height
 bottomVentsFrequency=4;
 
-/* [Hidden] */
-// The below are not configurable
-boardThickness=1;
-boardCornerRadius=3;
-mountingHoleXoffset=58;
-mountingHoleYoffset=49;
-
+/*[Fan spec]*/
 fanSide=40;
 fanSideRoundingRadius=2;
 fanThickness=11;
@@ -57,13 +55,27 @@ fanGripWidth=8;
 // how far off-center length-ways is the fan (negative=towards sdcard)
 fanxofset=-5;
 
+/* [Hidden] */
+// The below are not configurable
+boardThickness=1;
+boardCornerRadius=3;
+mountingHoleXoffset=58;
+mountingHoleYoffset=49;
+
+usbBlockDepth=17.5;
+usbBlockCenterOffset=4;
+ethBlockDepth=22;
+ethBlockCenterOffset=4;
+
+usbBlockHeight=16;
+
 MIN=-1;
 CENTER=0;
 MAX=1;
 
 function getBoardLength() = boardSize=="B"?85:65;
 function getBoardHeight() = 56;
-function getBoardMaxZ()=boardThickness+16;
+function getBoardMaxZ()=boardThickness+usbBlockHeight+connectorHoleMargin*2;
 
 module alignToBoard(x=CENTER, y=CENTER, z=CENTER) {
   translate([x*getBoardLength()/2, y*getBoardHeight()/2, z*boardThickness]) {
@@ -244,12 +256,12 @@ module usbHoleRight() {
   alignToUsbRight() usbSideHole() usbHoleOutline();
 }
 
-module alignToUsb() {
+module alignToSingleUsb() {
   alignToBoard(MAX, MIN, MAX) translate([0, 29, 8/2]) children();
 }
 
 module singleUsbHole(margin=connectorHoleMargin) {
-  alignToUsb() usbSideHole() usbHoleOutline();
+  alignToSingleUsb() usbSideHole() usbHoleOutline();
 }
 
 module usbHoles() {
@@ -340,9 +352,11 @@ module bottomVents() {
 }
 
 module topVents() {
+  echo("TODO");
 }
 
 module sideVents(height) {
+  echo("TODO");
 }
 
 module ventHoles(height) {
@@ -361,7 +375,8 @@ module caseHoles(height) {
   ventHoles(height);
 }
 
-caseShellHeight=getBoardMaxZ()+baseThickness+bottomMargin;
+insideCaseHeight=getBoardMaxZ()+bottomMargin+(coverCase?0:lidThickness)+heightDelta;
+outsideCaseHeight=insideCaseHeight+baseThickness+(coverCase?lidThickness:0);
 module basicCaseShell() {
   translate([0, 0, -baseThickness-bottomMargin]) {
     translate([0, 0, baseThickness]) {
@@ -375,23 +390,40 @@ module basicCaseShell() {
     alignToBoard(CENTER, CENTER, CENTER){
       difference() {
         // outside of shell
-        linear_extrude(height=caseShellHeight, center=false, convexity=10, twist=0) {
+        linear_extrude(height=outsideCaseHeight, center=false, convexity=10, twist=0) {
           offset(r=wallThickness+sideMargin)
           boardOutline(holes=false);
         }
         // inside of shell
         translate([0, 0, baseThickness]) {
-          linear_extrude(height=caseShellHeight, center=false, convexity=10, twist=0) {
+          linear_extrude(height=insideCaseHeight, center=false, convexity=10, twist=0) {
             offset(r=sideMargin)
             boardOutline(holes=false);
           }
         }
-        //holes
         translate([0, 0, baseThickness+bottomMargin]) {
-          caseHoles(height=height);
+          //holes
+          caseHoles(height=outsideCaseHeight);
+          // inner volumes for the port blocks
+          alignToEthPort() portBlock(ethBlockDepth, ethBlockCenterOffset) ethHoleOutline(0);
+          alignToUsbLeft() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
+          alignToUsbRight() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
         }
       }
     }
+  }
+}
+
+module portBlock(depth, offset) {
+  minkowski() {
+    translate([-depth+offset, 0, 0]) {
+      rotate([0,90,0]) linear_extrude(height=depth, center=false) {
+        rotate([0, 0, 90]) {
+          children();
+        }
+      };
+    }
+    cube(size=portBlockMargin*2, center=true);
   }
 }
 
@@ -434,7 +466,7 @@ module fan(cubeMargin=0) {
 if(renderBottom){
   difference() {
     union() {
-      basicCaseShell(height=baseThickness+boardThickness+bottomMargin+getBoardMaxZ()-4);
+      basicCaseShell();
     }
   }
 }
@@ -454,7 +486,8 @@ module basicCaseLid() {
   }
 }
 
-difference() {
+module lidWithFan() {
+  difference() {
     basicCaseLid();
     translate([fanxofset, 0, -lidHeight/2]) {
       linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
@@ -477,27 +510,32 @@ difference() {
       fanGrillDistance=.5;
       translate([0, 0, lidThickness-fanGrillDistance]) {
         #cylinder(d=fanSide, h=fanGrillDistance, center=false);
+      }
     }
   }
-}
-// fingers gripping the fan
-translate([fanxofset, 0, 0]) {
-  for (i=[0:3]) {
-    rotate([0, 0, i*90]) {
-      translate([0, .2+fanSide/2, -lidHeight/2+lidThickness]) {
-        rotate([0, -90, 0]) {
-          linear_extrude(height=fanGripWidth, center=true, convexity=10, twist=0) {
-            polygon(points=[
-              [0,0],
-              [fanThickness,0],
-              [fanThickness+.75, -.6],
-              [fanThickness+1, 0],
-              [fanThickness+1, 2],
-              [0,6]
-              ]);
+  // fingers gripping the fan
+  translate([fanxofset, 0, 0]) {
+    for (i=[0:3]) {
+      rotate([0, 0, i*90]) {
+        translate([0, .2+fanSide/2, -lidHeight/2+lidThickness]) {
+          rotate([0, -90, 0]) {
+            linear_extrude(height=fanGripWidth, center=true, convexity=10, twist=0) {
+              polygon(points=[
+                [0,0],
+                [fanThickness,0],
+                [fanThickness+.75, -.6],
+                [fanThickness+1, 0],
+                [fanThickness+1, 2],
+                [0,6]
+                ]);
+              }
             }
           }
         }
       }
     }
+}
+
+if (renderBottom) {
+  basicCaseShell();
 }
