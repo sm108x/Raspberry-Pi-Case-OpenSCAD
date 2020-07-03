@@ -32,7 +32,7 @@ coverCase=false;
 heightDelta=0;
 
 /*[What parts to render]*/
-renderBottom=false;
+renderBottom=true;
 
 /*[Vents]*/
 // the size of the margin on the the outside of the board outline where vents are not allowed
@@ -44,6 +44,7 @@ bottomVentsFrequency=4;
 
 /*[Fan spec]*/
 fanSide=40;
+fanHubDiamter=25;
 fanSideRoundingRadius=2;
 fanThickness=11;
 fanScrewHoleRadius=3/2;
@@ -54,6 +55,8 @@ fanHoleDistanceFromEdge=2;
 fanGripWidth=8;
 // how far off-center length-ways is the fan (negative=towards sdcard)
 fanxofset=-5;
+// stand-off to leave space for the fan to spin
+fanGrillDistance=.5;
 
 /* [Hidden] */
 // The below are not configurable
@@ -76,6 +79,9 @@ MAX=1;
 function getBoardLength() = boardSize=="B"?85:65;
 function getBoardHeight() = 56;
 function getBoardMaxZ()=boardThickness+usbBlockHeight+connectorHoleMargin*2;
+
+insideCaseHeight=getBoardMaxZ()+bottomMargin+(coverCase?0:lidThickness)+heightDelta;
+outsideCaseHeight=insideCaseHeight+baseThickness+(coverCase?lidThickness:0);
 
 module alignToBoard(x=CENTER, y=CENTER, z=CENTER) {
   translate([x*getBoardLength()/2, y*getBoardHeight()/2, z*boardThickness]) {
@@ -375,8 +381,6 @@ module caseHoles(height) {
   ventHoles(height);
 }
 
-insideCaseHeight=getBoardMaxZ()+bottomMargin+(coverCase?0:lidThickness)+heightDelta;
-outsideCaseHeight=insideCaseHeight+baseThickness+(coverCase?lidThickness:0);
 module basicCaseShell() {
   translate([0, 0, -baseThickness-bottomMargin]) {
     translate([0, 0, baseThickness]) {
@@ -409,7 +413,45 @@ module basicCaseShell() {
           alignToUsbLeft() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
           alignToUsbRight() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
         }
+
+        // fan grill
+        translate([fanxofset, 0, outsideCaseHeight-lidThickness]) {
+          difference() {
+            cylinder(d=fanSide, h=lidThickness, center=false);
+            cylinder(d=fanHubDiamter, h=lidThickness, center=false);
+            translate([0, 0, lidThickness/2]) {
+              for (i=[0:1]) {
+                rotate([0, 0, 45+i*90]) {
+                  cube(size=[fanSide, 3, lidThickness], center=true);
+                }
+              }
+            }
+          }
+        }
       }
+      translate([fanxofset, 0, +outsideCaseHeight-lidThickness]) {
+        for (i=[0:3]) {
+          rotate([0, 0, i*90]) {
+            translate([0, fanSide/2, 0]) {
+              rotate([0, 90, 0]) {
+                fanGrip();
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+module alignToCaseOuterShell(x=CENTER, y=CENTER, z=CENTER) {
+  echo("TO DEBUG");
+  caseLength=getBoardLength()+(sideMargin+wallThickness)*2;
+  caseWidth=getBoardHeight()+(sideMargin+wallThickness)*2;
+  translate([0, 0, -baseThickness-bottomMargin]) {
+    translate([x*caseLength/2, y*caseWidth/2, z*outsideCaseHeight/2]) {
+      alignToBoard() children();
     }
   }
 }
@@ -506,8 +548,6 @@ module lidWithFan() {
           }
         }
       }
-      // stand-off to leave space for the fan to spin
-      fanGrillDistance=.5;
       translate([0, 0, lidThickness-fanGrillDistance]) {
         #cylinder(d=fanSide, h=fanGrillDistance, center=false);
       }
@@ -519,23 +559,33 @@ module lidWithFan() {
       rotate([0, 0, i*90]) {
         translate([0, .2+fanSide/2, -lidHeight/2+lidThickness]) {
           rotate([0, -90, 0]) {
-            linear_extrude(height=fanGripWidth, center=true, convexity=10, twist=0) {
-              polygon(points=[
-                [0,0],
-                [fanThickness,0],
-                [fanThickness+.75, -.6],
-                [fanThickness+1, 0],
-                [fanThickness+1, 2],
-                [0,6]
-                ]);
-              }
-            }
+            fanGrip();
           }
         }
       }
     }
+  }
+}
+
+module fanGrip() {
+  linear_extrude(height=fanGripWidth, center=true, convexity=10, twist=0) {
+    fanGripOutline();
+  }
+}
+
+module fanGripOutline() {
+  polygon(points=[
+    [0,0],
+    [fanThickness,0],
+    [fanThickness+.75, -.6],
+    [fanThickness+1, 0],
+    [fanThickness+1, 2],
+    [0,6]
+    ]);
 }
 
 if (renderBottom) {
   basicCaseShell();
+} else {
+  lidWithFan();
 }
