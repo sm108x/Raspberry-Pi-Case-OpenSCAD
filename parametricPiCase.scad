@@ -33,6 +33,7 @@ heightDelta=0;
 
 /*[What parts to render]*/
 renderBottom=true;
+splitHeight=1.1;
 
 /*[Vents]*/
 // the size of the margin on the the outside of the board outline where vents are not allowed
@@ -417,10 +418,10 @@ module basicCaseShell() {
         }
 
         // fan grill
-        translate([fanxofset, 0, outsideCaseHeight-lidThickness]) {
+        translate([fanxofset, 0, outsideCaseHeight-lidThickness/2]) {
           difference() {
-            cylinder(d=fanSide, h=lidThickness, center=false);
-            cylinder(d=fanHubDiamter, h=lidThickness, center=false);
+            cylinder(d=fanSide, h=lidThickness+1, center=true);
+            cylinder(d=fanHubDiamter, h=lidThickness, center=true);
             translate([0, 0, lidThickness/2]) {
               for (i=[0:1]) {
                 rotate([0, 0, 45+i*90]) {
@@ -520,45 +521,6 @@ module basicCaseLid() {
   }
 }
 
-module lidWithFan() {
-  difference() {
-    basicCaseLid();
-    translate([fanxofset, 0, -lidHeight/2]) {
-      linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
-        difference() {
-          // outer fan circumference
-          circle(d=40);
-          // inner fan hub
-          circle(d=25);
-          // holders for fan hub shield
-          rotate([0, 0, 45]) {
-            for (i=[0:1]) {
-              rotate([0, 0, i*90]) {
-                square(size=[40, 2], center=true);
-              }
-            }
-          }
-        }
-      }
-      translate([0, 0, lidThickness-fanGrillDistance]) {
-        #cylinder(d=fanSide, h=fanGrillDistance, center=false);
-      }
-    }
-  }
-  // fingers gripping the fan
-  translate([fanxofset, 0, 0]) {
-    for (i=[0:3]) {
-      rotate([0, 0, i*90]) {
-        translate([0, .2+fanSide/2, -lidHeight/2+lidThickness]) {
-          rotate([0, -90, 0]) {
-            fanGrip();
-          }
-        }
-      }
-    }
-  }
-}
-
 module fanGrip() {
   linear_extrude(height=fanGripWidth, center=true, convexity=10, twist=0) {
     fanGripOutline();
@@ -576,29 +538,29 @@ module fanGripOutline() {
     ]);
 }
 
-module cutter(args) {
-  translate([0, 0, -baseThickness-bottomMargin+splitHeight]) {
-    difference() {
+module cutter() {
+  maxGripHeight=fanThickness+1;
+  difference() {
+    translate([0, 0, -baseThickness-bottomMargin-outsideCaseHeight/2+splitHeight]) {
       cube(size=[caseLength, caseWidth, outsideCaseHeight], center=true);
-      translate([fanxofset, 0, fanThickness/2]) {
-        cube(size=[fanSide+16, fanSide+16, fanThickness], center=true);
-      }
+    }
+    translate([fanxofset, 0, -baseThickness-bottomMargin+outsideCaseHeight-lidThickness-maxGripHeight/2]) {
+      cube(size=[fanSide+16, fanSide+16, maxGripHeight], center=true);
     }
   }
 }
 
-splitHeight=1;
 module caseBottom() {
   intersection() {
     basicCaseShell();
-    #cutter();
+    cutter();
   }
 }
 
 module caseTop() {
   difference() {
     basicCaseShell();
-    #cutter();
+    cutter();
   }
 }
 
