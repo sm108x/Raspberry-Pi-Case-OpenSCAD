@@ -52,6 +52,10 @@ fanScrewHoleRadius=3/2;
 // distances from outside
 fanDistanceFromEdge=.5;
 fanHoleDistanceFromEdge=2;
+// how wide are the fingers gripping the fan
+fanGripWidth=8;
+// how far off-center length-ways is the fan (negative=towards sdcard)
+fanxofset=-5;
 
 MIN=-1;
 CENTER=0;
@@ -450,49 +454,49 @@ module basicCaseLid() {
   }
 }
 
-
-intersection() {
-  cube(size=[getBoardHeight(), getBoardHeight(), 50], center=true);
-  difference() {
-    union() {
-      basicCaseLid();
-      gripThickness=8;
-      for (i=[0:3]) {
-        rotate([0, 0, i*90]) {
-          translate([0, .3+fanSide/2, -lidHeight/2+lidThickness]) {
-            rotate([0, -90, 0]) {
-              linear_extrude(height=gripThickness, center=true, convexity=10, twist=0) {
-                polygon(points=[
-                  [0,0],
-                  [fanThickness,0],
-                  [fanThickness+.75, -.6],
-                  [fanThickness+1, 0],
-                  [fanThickness+1, 2],
-                  [0,6]
-                  ]);
-                }
+difference() {
+    basicCaseLid();
+    translate([fanxofset, 0, -lidHeight/2]) {
+      linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
+        difference() {
+          // outer fan circumference
+          circle(d=40);
+          // inner fan hub
+          circle(d=25);
+          // holders for fan hub shield
+          rotate([0, 0, 45]) {
+            for (i=[0:1]) {
+              rotate([0, 0, i*90]) {
+                square(size=[40, 2], center=true);
               }
             }
           }
         }
       }
-      translate([0, 0, -lidHeight/2]) {
-        linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
-          difference() {
-            circle(d=40);
-            circle(d=25);
-            rotate([0, 0, 45]) {
-              for (i=[0:1]) {
-                rotate([0, 0, i*90]) {
-                  square(size=[40, 2], center=true);
-                }
-              }
+      // stand-off to leave space for the fan to spin
+      fanGrillDistance=.5;
+      translate([0, 0, lidThickness-fanGrillDistance]) {
+        #cylinder(d=fanSide, h=fanGrillDistance, center=false);
+    }
+  }
+}
+// fingers gripping the fan
+translate([fanxofset, 0, 0]) {
+  for (i=[0:3]) {
+    rotate([0, 0, i*90]) {
+      translate([0, .2+fanSide/2, -lidHeight/2+lidThickness]) {
+        rotate([0, -90, 0]) {
+          linear_extrude(height=fanGripWidth, center=true, convexity=10, twist=0) {
+            polygon(points=[
+              [0,0],
+              [fanThickness,0],
+              [fanThickness+.75, -.6],
+              [fanThickness+1, 0],
+              [fanThickness+1, 2],
+              [0,6]
+              ]);
             }
           }
-        }
-        fanGrillDistance=.5;
-        translate([0, 0, lidThickness-fanGrillDistance]) {
-          #cylinder(d=fanSide, h=fanGrillDistance, center=false);
         }
       }
     }
