@@ -82,6 +82,8 @@ function getBoardMaxZ()=boardThickness+usbBlockHeight+connectorHoleMargin*2;
 
 insideCaseHeight=getBoardMaxZ()+bottomMargin+(coverCase?0:lidThickness)+heightDelta;
 outsideCaseHeight=insideCaseHeight+baseThickness+(coverCase?lidThickness:0);
+caseLength=getBoardLength()+(sideMargin+wallThickness)*2;
+caseWidth=getBoardHeight()+(sideMargin+wallThickness)*2;
 
 module alignToBoard(x=CENTER, y=CENTER, z=CENTER) {
   translate([x*getBoardLength()/2, y*getBoardHeight()/2, z*boardThickness]) {
@@ -447,8 +449,6 @@ module basicCaseShell() {
 
 module alignToCaseOuterShell(x=CENTER, y=CENTER, z=CENTER) {
   echo("TO DEBUG");
-  caseLength=getBoardLength()+(sideMargin+wallThickness)*2;
-  caseWidth=getBoardHeight()+(sideMargin+wallThickness)*2;
   translate([0, 0, -baseThickness-bottomMargin]) {
     translate([x*caseLength/2, y*caseWidth/2, z*outsideCaseHeight/2]) {
       alignToBoard() children();
@@ -501,14 +501,6 @@ module fan(cubeMargin=0) {
     minkowski() {
       basicFanMass();
       cube(size=[cubeMargin, cubeMargin, cubeMargin], center=true);
-    }
-  }
-}
-
-if(renderBottom){
-  difference() {
-    union() {
-      basicCaseShell();
     }
   }
 }
@@ -584,8 +576,34 @@ module fanGripOutline() {
     ]);
 }
 
+module cutter(args) {
+  translate([0, 0, -baseThickness-bottomMargin+splitHeight]) {
+    difference() {
+      cube(size=[caseLength, caseWidth, outsideCaseHeight], center=true);
+      translate([fanxofset, 0, fanThickness/2]) {
+        cube(size=[fanSide+16, fanSide+16, fanThickness], center=true);
+      }
+    }
+  }
+}
+
+splitHeight=1;
+module caseBottom() {
+  intersection() {
+    basicCaseShell();
+    #cutter();
+  }
+}
+
+module caseTop() {
+  difference() {
+    basicCaseShell();
+    #cutter();
+  }
+}
+
 if (renderBottom) {
-  basicCaseShell();
-} else {
-  lidWithFan();
+  caseBottom();
+}else{
+  caseTop();
 }
