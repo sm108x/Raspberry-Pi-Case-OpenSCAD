@@ -44,6 +44,7 @@ bottomVentsOpenRatio=.8;
 
 bottomVentsFrequency=0;
 /*[Fan spec]*/
+fanMount="screws"; //[screws,grippers]
 fanSide=40;
 fanHubDiamter=25;
 fanSideRoundingRadius=2;
@@ -51,7 +52,7 @@ fanThickness=11;
 fanScrewHoleRadius=3/2;
 // distances from outside
 fanDistanceFromEdge=.5;
-fanHoleDistanceFromEdge=2;
+fanHoleDistanceFromEdge=2+fanScrewHoleRadius;
 // how wide are the fingers gripping the fan
 fanGripWidth=8;
 // how far off-center length-ways is the fan (negative=towards sdcard)
@@ -422,22 +423,38 @@ module basicCaseShell() {
           difference() {
             cylinder(d=fanSide, h=lidThickness+1, center=true);
             cylinder(d=fanHubDiamter, h=lidThickness, center=true);
-            translate([0, 0, lidThickness/2]) {
-              for (i=[0:1]) {
-                rotate([0, 0, 45+i*90]) {
-                  cube(size=[fanSide, 3, lidThickness], center=true);
-                }
+            for (i=[0:1]) {
+              rotate([0, 0, 45+i*90]) {
+                cube(size=[fanSide, 3, lidThickness], center=true);
               }
             }
           }
         }
       }
+      // fan mount
       translate([fanxofset, 0, +outsideCaseHeight-lidThickness]) {
-        for (i=[0:3]) {
-          rotate([0, 0, i*90]) {
-            translate([0, fanSide/2, 0]) {
-              rotate([0, 90, 0]) {
-                fanGrip();
+        if (fanMount=="grippers") {
+          // grippers
+          for (i=[0:3]) {
+            rotate([0, 0, i*90]) {
+              translate([0, fanSide/2, 0]) {
+                rotate([0, 90, 0]) {
+                  fanGrip();
+                }
+              }
+            }
+          }
+        } else if (fanMount=="screws"){
+          fanScrewHoleLength=2;
+          for (i=[0:3]) {
+            rotate([0, 0, i*90]) {
+              translate([fanSide/2-fanHoleDistanceFromEdge, fanSide/2-fanHoleDistanceFromEdge, 0]) {
+                mirror([0, 0, 1]) {
+                  difference() {
+                    cylinder(r=fanScrewHoleRadius+1, h=fanScrewHoleLength, center=false);
+                    cylinder(r=fanScrewHoleRadius, h=fanScrewHoleLength, center=false);
+                  }
+                }
               }
             }
           }
@@ -567,5 +584,12 @@ module caseTop() {
 if (renderBottom) {
   caseBottom();
 }else{
-  caseTop();
+  intersection() {
+    cube(size=[45,45,10], center=true);
+    translate([-fanxofset, 0, 20]) {
+      mirror([0, 0, 1]) {
+        caseTop();
+      }
+    }
+  }
 }
