@@ -17,9 +17,9 @@ portBlockMargin=0.5;
 // Thickness of the base
 baseThickness=1.9;
 // Thickness of the side walls
-wallThickness=1.5;
+wallThickness=2.1;
 // Lid Thickness
-lidThickness=1.5;
+lidThickness=1.9;
 
 /*[Resolution]*/
 $fs=.5;
@@ -28,12 +28,12 @@ $fa=5;
 /*[Features]*/
 sdCardExtendToCaseBottom=true;
 lidHeight=10;
-coverCase=false;
+coverCase=true;
 heightDelta=0;
 
 /*[What parts to render]*/
 renderBottom=true;
-splitHeight=1.1;
+splitHeight=7;
 
 /*[Vents]*/
 // the size of the margin on the the outside of the board outline where vents are not allowed
