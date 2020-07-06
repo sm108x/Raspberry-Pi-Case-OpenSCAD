@@ -33,7 +33,7 @@ heightDelta=0; //[-20:0.1:40]
 
 /*[What parts to render]*/
 renderParts="whole"; //[whole, top, bottom, split]
-splitHeight=7;
+splitHeight=7; // [0:0.1:50]
 
 /*[Vents]*/
 // the size of the margin on the the outside of the board outline where vents are not allowed
@@ -44,7 +44,7 @@ bottomVentsOpenRatio=.8;
 
 bottomVentsFrequency=0;
 /*[Fan spec]*/
-fanMount="screws"; //[screws,grippers]
+fanMount="screws"; //[screws,grippers,throughScrews]
 fanSide=40;
 fanHubDiameter=25;
 fanSideRoundingRadius=2;
@@ -52,6 +52,7 @@ fanThickness=11;
 fanScrewHoleRadius=3/2;
 // distances from outside
 fanDistanceFromEdge=.5;
+fanDiameter=fanSide-fanDistanceFromEdge*2;
 fanHoleDistanceFromEdge=2+fanScrewHoleRadius;
 // how wide are the fingers gripping the fan
 fanGripWidth=8;
@@ -385,6 +386,36 @@ module caseHoles(height) {
   ventHoles(height);
 }
 
+module fanGrill() {
+  difference() {
+    cylinder(d=fanDiameter, h=lidThickness, center=false);
+    cylinder(d=fanHubDiameter, h=lidThickness, center=false);
+    for (i=[0:3]) {
+      rotate([0, 0, 45+i*90]) {
+        translate([0, -1, 0]) {
+          cube(size=[fanSide, 2, fanThickness], center=false);
+        }
+      }
+    }
+  }
+  translate([0, 0, lidThickness-fanGrillDistance]) {
+    cylinder(d=fanDiameter, h=lidThickness, center=false);
+  }
+}
+
+module alignToFanScrewHoles() {
+  screwHoleDistance=fanSide-fanHoleDistanceFromEdge*2;
+  translate([-screwHoleDistance/2, -screwHoleDistance/2, 0]) {
+    for (i=[0:1]) {
+      for (j=[0:1]) {
+        translate([i*screwHoleDistance, j*screwHoleDistance, 0]) {
+          children();
+        }
+      }
+    }
+  }
+}
+
 module basicCaseShell() {
   difference() {
     // shell
@@ -406,17 +437,19 @@ module basicCaseShell() {
     caseHoles(height=outsideCaseHeight);
     // inner volumes for the port blocks
     alignToEthPort() portBlock(ethBlockDepth, ethBlockCenterOffset) ethHoleOutline(0);
-    alignToUsbLeft() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
-    alignToUsbRight() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
+    hull() {
+      alignToUsbLeft() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
+      alignToUsbRight() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
+    }
+
     // fan grill
-    alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, 0, 0]) difference() {
-      #cylinder(d=fanSide, h=lidThickness, center=true);
-      /* cylinder(d=fanHubDiameter, h=lidThickness, center=true);
-      for (i=[0:1]) {
-        rotate([0, 0, 45+i*90]) {
-          cube(size=[fanSide, 3, lidThickness], center=true);
+    alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, 0, 0]) {
+      mirror([0, 0, 1]) {
+        fanGrill();
+        if (fanMount=="throughScrews"){
+          alignToFanScrewHoles() cylinder(r=fanScrewHoleRadius, h=lidThickness*2, center=false);
         }
-      } */
+      }
     }
   }
 
@@ -442,7 +475,7 @@ module basicCaseShell() {
               mirror([0, 0, 1]) {
                 difference() {
                   cylinder(r=fanScrewHoleRadius+.4, h=fanScrewHoleLength, center=false);
-                  cylinder(r=fanScrewHoleRadius, h=fanScrewHoleLength, center=false);
+                  cylinder(r1=fanScrewHoleRadius*.95, r2=fanScrewHoleRadius*1.01, h=fanScrewHoleLength, center=false);
                 }
               }
             }
@@ -461,7 +494,7 @@ module basicCaseShell() {
 }
 
 module alignToCaseOuterShell(x=CENTER, y=CENTER, z=CENTER) {
-  caseMinZ=-baseThickness-bottomMargin;
+  caseMinZ=-baseThickness-bottomMargin-boardThickness;
   caseCenterZ=caseMinZ+outsideCaseHeight/2;
   translate([0, 0, caseCenterZ]) {
     translate([x*caseLength/2, y*caseWidth/2, z*outsideCaseHeight/2]) children();
