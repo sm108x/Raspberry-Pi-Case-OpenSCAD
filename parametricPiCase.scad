@@ -44,22 +44,25 @@ bottomVentsOpenRatio=.8;
 
 bottomVentsFrequency=0;
 /*[Fan spec]*/
-fanMount="screws"; //[screws,grippers,throughScrews]
+fanMount="screws"; //[screws,grippers,throughScrews,recessedIntoLid]
 fanSide=40;
 fanHubDiameter=25;
 fanSideRoundingRadius=2;
-fanThickness=11;
-fanScrewHoleRadius=3/2;
+fanThickness=10.5;
+fanScrewHoleRadius=1.5;
 // distances from outside
 fanDistanceFromEdge=.5;
 fanDiameter=fanSide-fanDistanceFromEdge*2;
-fanHoleDistanceFromEdge=2+fanScrewHoleRadius;
+fanHoleOutsideDistanceFromEdge=1.9;
+fanHoleDistanceFromEdge=fanHoleOutsideDistanceFromEdge+fanScrewHoleRadius;
 // how wide are the fingers gripping the fan
 fanGripWidth=8;
 // how far off-center length-ways is the fan (negative=towards sdcard)
 fanXoffset=-5;
+fanYoffset=0;
 // stand-off to leave space for the fan to spin
 fanGrillDistance=.5;
+fanGripperTolerance=.1;
 
 /* [Hidden] */
 // The below are not configurable
@@ -443,11 +446,18 @@ module basicCaseShell() {
     }
 
     // fan grill
-    alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, 0, 0]) {
-      mirror([0, 0, 1]) {
-        fanGrill();
-        if (fanMount=="throughScrews"){
-          alignToFanScrewHoles() cylinder(r=fanScrewHoleRadius, h=lidThickness*2, center=false);
+    alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, fanYoffset, 0]) {
+      mirror([0, 0, 1]){
+        if (fanMount=="recessedIntoLid") {
+          linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
+            offset(r=fanGripperTolerance)
+            fanOutline();
+          }
+        }else{
+          fanGrill();
+          if (fanMount=="throughScrews"){
+            alignToFanScrewHoles() cylinder(r=fanScrewHoleRadius, h=lidThickness*2, center=false);
+          }
         }
       }
     }
@@ -455,14 +465,16 @@ module basicCaseShell() {
 
   // fan mount
   alignToCaseOuterShell(CENTER, CENTER, MAX){
-    translate([fanXoffset, 0, -lidThickness]) {
-      if (fanMount=="grippers") {
+    translate([fanXoffset, fanYoffset, -lidThickness]) {
+      if (fanMount=="grippers" || fanMount=="recessedIntoLid") {
         // grippers
-        #for (i=[0:3]) {
-          rotate([0, 0, i*90]) {
-            translate([0, fanSide/2, 0]) {
-              rotate([0, 90, 0]) {
-                fanGrip();
+        translate([0, 0, (fanMount=="recessedIntoLid")?lidThickness:0]) {
+          for (i=[0:3]) {
+            rotate([0, 0, i*90]) {
+              translate([0, fanSide/2+fanGripperTolerance, 0]) {
+                rotate([0, 90, 0]) {
+                  fanGrip();
+                }
               }
             }
           }
@@ -534,9 +546,13 @@ module roundedSquare(side, roundingRadius=1) {
   roundedRectangle([side, side], roundingRadius);
 }
 
+module fanOutline() {
+  roundedSquare(fanSide, fanSideRoundingRadius);
+}
+
 module basicFanMass(args) {
   linear_extrude(height=fanThickness, center=true, convexity=10, twist=0) {
-    roundedSquare(fanSide, fanSideRoundingRadius);
+    fanOutline();
   }
 }
 
@@ -588,7 +604,7 @@ module cutter() {
     translate([0, 0, -baseThickness-bottomMargin-outsideCaseHeight/2+splitHeight]) {
       cube(size=[caseLength, caseWidth, outsideCaseHeight], center=true);
     }
-    translate([fanXoffset, 0, -baseThickness-bottomMargin+outsideCaseHeight-lidThickness-maxGripHeight/2]) {
+    translate([fanXoffset, fanYoffset, -baseThickness-bottomMargin+outsideCaseHeight-lidThickness-maxGripHeight/2]) {
       cube(size=[fanSide+16, fanSide+16, maxGripHeight], center=true);
     }
   }
