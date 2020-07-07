@@ -48,12 +48,13 @@ fanMount="screws"; //[screws,grippers,throughScrews]
 fanSide=40;
 fanHubDiameter=25;
 fanSideRoundingRadius=2;
-fanThickness=11;
-fanScrewHoleRadius=3/2;
+fanThickness=10.5;
+fanScrewHoleRadius=1.5;
 // distances from outside
 fanDistanceFromEdge=.5;
 fanDiameter=fanSide-fanDistanceFromEdge*2;
-fanHoleDistanceFromEdge=2+fanScrewHoleRadius;
+fanHoleOutsideDistanceFromEdge=1.9;
+fanHoleDistanceFromEdge=fanHoleOutsideDistanceFromEdge+fanScrewHoleRadius;
 // how wide are the fingers gripping the fan
 fanGripWidth=8;
 // how far off-center length-ways is the fan (negative=towards sdcard)
@@ -444,7 +445,6 @@ module basicCaseShell() {
     }
 
     // fan grill
-    alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, 0, 0]) {
     alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, fanYoffset, 0]) {
       mirror([0, 0, 1]) {
         fanGrill();
@@ -457,7 +457,6 @@ module basicCaseShell() {
 
   // fan mount
   alignToCaseOuterShell(CENTER, CENTER, MAX){
-    translate([fanXoffset, 0, -lidThickness]) {
     translate([fanXoffset, fanYoffset, -lidThickness]) {
       if (fanMount=="grippers") {
         // grippers
@@ -591,7 +590,6 @@ module cutter() {
     translate([0, 0, -baseThickness-bottomMargin-outsideCaseHeight/2+splitHeight]) {
       cube(size=[caseLength, caseWidth, outsideCaseHeight], center=true);
     }
-    translate([fanXoffset, 0, -baseThickness-bottomMargin+outsideCaseHeight-lidThickness-maxGripHeight/2]) {
     translate([fanXoffset, fanYoffset, -baseThickness-bottomMargin+outsideCaseHeight-lidThickness-maxGripHeight/2]) {
       cube(size=[fanSide+16, fanSide+16, maxGripHeight], center=true);
     }
