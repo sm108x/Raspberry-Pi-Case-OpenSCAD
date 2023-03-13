@@ -44,7 +44,7 @@ bottomVentsOpenRatio=.8;
 
 bottomVentsFrequency=0;
 /*[Fan spec]*/
-fanMount="screws"; //[screws,grippers,throughScrews,recessedIntoLid]
+fanMount="screws"; //[screws,grippers,throughScrews,recessedIntoLid,none]
 fanSide=40;
 fanHubDiameter=25;
 fanSideRoundingRadius=2;
@@ -446,18 +446,20 @@ module basicCaseShell() {
       alignToUsbRight() portBlock(usbBlockDepth, usbBlockCenterOffset) usbHoleOutline(0);
     }
 
-    // fan grill
-    alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, fanYoffset, 0]) {
-      mirror([0, 0, 1]){
-        if (fanMount=="recessedIntoLid") {
-          linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
-            offset(r=fanGripperTolerance)
-            fanOutline();
-          }
-        }else{
-          fanGrill();
-          if (fanMount=="throughScrews"){
-            alignToFanScrewHoles() cylinder(r=fanScrewHoleRadius, h=lidThickness*2, center=false);
+    if (fanMount!="none") {
+      // fan grill
+      alignToCaseOuterShell(CENTER, CENTER, MAX) translate([fanXoffset, fanYoffset, 0]) {
+        mirror([0, 0, 1]){
+          if (fanMount=="recessedIntoLid") {
+            linear_extrude(height=lidThickness, center=false, convexity=10, twist=0) {
+              offset(r=fanGripperTolerance)
+              fanOutline();
+            }
+          }else{
+            fanGrill();
+            if (fanMount=="throughScrews"){
+              alignToFanScrewHoles() cylinder(r=fanScrewHoleRadius, h=lidThickness*2, center=false);
+            }
           }
         }
       }
