@@ -82,14 +82,76 @@ MIN=-1;
 CENTER=0;
 MAX=1;
 
+
+/*[PiFi]*/
+renderPiFi=false;
+pifiSplitOffset=-2.9;
+outsideRCAdistance=22.2;
+/*
+
++----+
+|    |
+ O  O
+*/
+insideRCAdistance=5.8;
+/*
+
++----+
+  ||
+ O  O
+ */
+RCADiameter=8.2;
+
+hatTopDistanceFromBoardBottom=13.5;
+hatThickness=boardThickness;
+
+piFiExtensionBottomInsertLength=3;
+piFiExtensionBottomInsertOverlap=3;
+
+RCAMountPlateWidth=26.5;
+RCAMountPlateHeight=12.3;
+RCAMountPlateRightEdgeDistanceFromBoardLeftEdge=52.3;
+RCAMountPlateTopEdgeDistanceFromBoardBottomEdge=15.9;
+
+RCAMountPlateLeftEdgeDistanceFromBoardLeftEdge=RCAMountPlateRightEdgeDistanceFromBoardLeftEdge-RCAMountPlateWidth;
+leftRCACentreDistanceFromRCAMountPlateLeftEdge=(RCAMountPlateWidth-outsideRCAdistance)/2+RCADiameter/2;
+RCAMountPlateBottomEdgeDistanceFromBoardTopEdge=RCAMountPlateTopEdgeDistanceFromBoardBottomEdge-RCAMountPlateHeight-hatThickness;
+RCAcentreDistanceFromHatBottom=RCAMountPlateTopEdgeDistanceFromBoardBottomEdge-RCAMountPlateHeight/2;
+
+RCAcentresOffset=insideRCAdistance+RCADiameter;
+
+piFiJackHoleDiameter=4.9;
+piFiInsideJackToBoardLeftEdge=16.9;
+piFiInsideJackToHatBottom=2.5;
+piFiInsideJackDiameter=3.65;
+piFiInsideJackRadius=piFiInsideJackDiameter/2;
+pifiJackHoleCenterToBoardLeftEdge=piFiInsideJackToBoardLeftEdge+piFiInsideJackRadius;
+pifiJackHoleCenterToHatBottom=piFiInsideJackToHatBottom+piFiInsideJackRadius;
+piFiJackHoleTolerance=.5;
+
+RCAPlateFixingScrewBottomToHatBottom=17.4;
+RCAPlateFixingScrewHoleDiameter=2.6;
+RCAPlateFixingScrewHoleCentreDistanceFromHatBottom=RCAPlateFixingScrewBottomToHatBottom+RCAPlateFixingScrewHoleDiameter/2;
+RCAConnectorHoleTolerance=.5;
+RCAConnectorHoleDiameter=RCADiameter+RCAConnectorHoleTolerance*2;
+
+RCAPlateFixingScrewHoleTolerance=.5;
+pifiExtraHeight=RCAPlateFixingScrewBottomToHatBottom+RCAPlateFixingScrewHoleDiameter;
+
+piFiMaxZfromHatBottom=22;
+piFiHeadroomMargin=3;
+
 function getBoardLength() = boardSize=="B"?85:65;
 function getBoardHeight() = 56;
 function getBoardMaxZ()=boardThickness+usbBlockHeight+connectorHoleMargin*2;
 
-insideCaseHeight=getBoardMaxZ()+bottomMargin+(coverCase?0:lidThickness)+heightDelta;
+insideCaseHeight=getBoardMaxZ()+bottomMargin+(coverCase?0:lidThickness)+heightDelta+(renderPiFi?pifiExtraHeight:0);
 outsideCaseHeight=insideCaseHeight+baseThickness+(coverCase?lidThickness:0);
 caseLength=getBoardLength()+(sideMargin+wallThickness)*2;
 caseWidth=getBoardHeight()+(sideMargin+wallThickness)*2;
+
+pifiMaxZFromZ0=baseThickness+hatTopDistanceFromBoardBottom-hatThickness+piFiMaxZfromHatBottom;
+piFiExtensionHeight=pifiMaxZFromZ0-outsideCaseHeight+piFiHeadroomMargin;
 
 module alignToBoard(x=CENTER, y=CENTER, z=CENTER) {
   translate([x*getBoardLength()/2, y*getBoardHeight()/2, z*boardThickness]) {
@@ -380,6 +442,36 @@ module ventHoles(height) {
   sideVents(height);
 }
 
+module alignToHatBottomHeight() {
+  alignToBoard(z=MIN) translate([0, 0, hatTopDistanceFromBoardBottom]) children();
+}
+
+module alignToPifiRCAHoles(){
+  for (i=[0:1]) {
+    alignToBoard(x=MIN, y=MIN) alignToHatBottomHeight() translate([RCAMountPlateLeftEdgeDistanceFromBoardLeftEdge+leftRCACentreDistanceFromRCAMountPlateLeftEdge+RCAcentresOffset*i, 0, RCAcentreDistanceFromHatBottom]) children();
+  }
+}
+
+module alignToPifiJackHole() {
+  alignToBoard(x=MIN, y=MIN) alignToHatBottomHeight() translate([pifiJackHoleCenterToBoardLeftEdge, 0, pifiJackHoleCenterToHatBottom]) children();
+}
+
+module alignToPifiMountingScrewHole() {
+  alignToBoard(x=MIN, y=MIN) alignToHatBottomHeight() translate([RCAMountPlateLeftEdgeDistanceFromBoardLeftEdge+RCAMountPlateWidth/2, 0, RCAPlateFixingScrewHoleCentreDistanceFromHatBottom]) children();
+}
+
+module pifiRCAHoles() {
+  alignToPifiRCAHoles() caseHole(rotation=0) circle(d=RCAConnectorHoleDiameter);
+}
+
+module pifiJackHole() {
+  alignToPifiJackHole() caseHole() circle(d=piFiJackHoleDiameter+piFiJackHoleTolerance*2);
+}
+
+module pifiMountingScrewHole() {
+  alignToPifiMountingScrewHole() caseHole() circle(d=RCAPlateFixingScrewHoleDiameter+RCAPlateFixingScrewHoleTolerance*2);
+}
+
 module caseHoles(height) {
   powerConnectorHole();
   hdmiHoles();
@@ -388,6 +480,11 @@ module caseHoles(height) {
   ethHoles();
   sdCardHole();
   ventHoles(height);
+  if (renderPiFi) {
+    pifiRCAHoles();
+    pifiJackHole();
+    pifiMountingScrewHole();
+  }
 }
 
 module fanGrill() {
